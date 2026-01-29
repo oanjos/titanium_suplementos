@@ -1,0 +1,103 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/titanium_suplementos/nextjs_space/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Product {
+  id               Int      @id @default(autoincrement())
+  name             String
+  description      String   @db.Text
+  category         String
+  brand            String
+  costPrice        Decimal? @map("cost_price") @db.Decimal(10, 2) // Preço de custo
+  marginPercentage Decimal? @map("margin_percentage") @db.Decimal(5, 2) // % de margem
+  price            Decimal  @db.Decimal(10, 2) // Preço final (pode ser calculado: custo + margem)
+  imageUrl         String   @map("image_url") @db.Text
+  supplierUrl      String?  @map("supplier_url") @db.Text // Link do anúncio do distribuidor (referência)
+  supplierCode     String?  @map("supplier_code") // Código do produto no distribuidor
+  stockType        String   @map("stock_type") // 'pronta_entrega' ou 'sob_encomenda'
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  variants   ProductVariant[]
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+model ProductVariant {
+  id              Int      @id @default(autoincrement())
+  productId       Int      @map("product_id")
+  name            String   // ex: "Chocolate 1kg", "Baunilha 900g"
+  sku             String
+  additionalPrice Decimal  @map("additional_price") @db.Decimal(10, 2) // preço adicional em relação ao base
+  stockQuantity   Int      @map("stock_quantity")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@map("product_variants")
+}
+
+model DiscountCode {
+  id            Int      @id @default(autoincrement())
+  code          String   @unique
+  discountType  String   @map("discount_type") // 'percentage' ou 'fixed'
+  discountValue Decimal  @map("discount_value") @db.Decimal(10, 2)
+  minPurchase   Decimal  @map("min_purchase") @db.Decimal(10, 2)
+  maxUses       Int      @map("max_uses")
+  usesCount     Int      @default(0) @map("uses_count")
+  validFrom     DateTime @map("valid_from")
+  validUntil    DateTime @map("valid_until")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  orders Order[]
+
+  @@map("discount_codes")
+}
+
+model Order {
+  id              Int      @id @default(autoincrement())
+  orderNumber     String   @unique @map("order_number")
+  customerName    String   @map("customer_name")
+  customerEmail   String   @map("customer_email")
+  customerPhone   String   @map("customer_phone")
+  customerAddress String   @map("customer_address") @db.Text
+  subtotal        Decimal  @db.Decimal(10, 2)
+  discountAmount  Decimal  @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  shippingCost    Decimal  @map("shipping_cost") @db.Decimal(10, 2)
+  totalAmount     Decimal  @map("total_amount") @db.Decimal(10, 2)
+  paymentMethod   String   @map("payment_method")
+  status          String   @default("pending")
+  discountCodeId  Int?     @map("discount_code_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  discountCode DiscountCode? @relation(fields: [discountCodeId], references: [id])
+  items        OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id               Int      @id @default(autoincrement())
+  orderId          Int      @map("order_id")
+  productId        Int      @map("product_id")
+  productVariantId Int?     @map("product_variant_id")
+  quantity         Int
+  unitPrice        Decimal  @map("unit_price") @db.Decimal(10, 2)
+  subtotal         Decimal  @db.Decimal(10, 2)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product         @relation(fields: [productId], references: [id])
+  productVariant ProductVariant? @relation(fields: [productVariantId], references: [id])
+
+  @@map("order_items")
+}
