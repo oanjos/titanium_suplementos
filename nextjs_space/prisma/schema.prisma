@@ -133,7 +133,7 @@ model Order {
   shippingCost    Decimal  @map("shipping_cost") @db.Decimal(10, 2)
   totalAmount     Decimal  @map("total_amount") @db.Decimal(10, 2)
   paymentMethod   PaymentMethod   @map("payment_method")
-  status          String   @default("pending")
+  status          OrderStatus   @default(pending)
   discountCodeId  Int?     @map("discount_code_id")
   createdAt       DateTime @default(now()) @map("created_at")
 
@@ -157,6 +157,17 @@ enum PaymentMethod {
   debit_card
 
   @@map("payment_method_enum")
+}
+
+enum OrderStatus {
+  pending
+  paid
+  processing
+  shipped
+  delivered
+  cancelled
+
+  @@map("order_status_enum")
 }
 
 model CustomerProfile {
