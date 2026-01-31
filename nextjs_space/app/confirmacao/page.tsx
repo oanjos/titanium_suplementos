@@ -31,6 +31,9 @@ function ConfirmacaoContent() {
           setOrder(data?.order ?? null);
           if (data?.order?.status === 'paid') {
             clearCart?.();
+            if (typeof window !== 'undefined') {
+              window.sessionStorage.removeItem('titanium.checkout.form');
+            }
           }
         }
       })

@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    const newStatus = mapPaymentStatus(payment?.status);
+    const newStatus = mapPaymentStatus(String(payment?.status ?? ''));
     const paymentMethod = mapPaymentMethod(payment);
 
     await prisma.$transaction(async (tx) => {

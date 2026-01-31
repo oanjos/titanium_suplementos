@@ -13,6 +13,8 @@ import { ShoppingBag, CreditCard, Tag, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
+const CHECKOUT_FORM_STORAGE_KEY = 'titanium.checkout.form';
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getTotal, clearCart } = useCart();
@@ -88,6 +90,39 @@ export default function CheckoutPage() {
       }
     };
   }, [formData.cpf]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const saved = window.sessionStorage.getItem(CHECKOUT_FORM_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setFormData((prev) => ({
+          ...prev,
+          ...parsed,
+        }));
+      }
+    } catch (error) {
+      // ignore storage errors
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.sessionStorage.setItem(
+        CHECKOUT_FORM_STORAGE_KEY,
+        JSON.stringify({
+          cpf: formData.cpf,
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
+        })
+      );
+    } catch (error) {
+      // ignore storage errors
+    }
+  }, [formData.cpf, formData.customerName, formData.customerEmail, formData.customerPhone]);
 
   const applyCoupon = async () => {
     if (!couponCode?.trim()) {
