@@ -9,9 +9,10 @@ interface PageProps {
   searchParams: { [key: string]: string | string[] | undefined };
 }
 
-async function getProducts(category?: string, search?: string) {
+async function getProducts(category?: string, search?: string, brand?: string) {
   try {
     const searchValue = search?.trim();
+    const brandValue = brand?.trim();
     const andConditions: any[] = [];
     if (category) {
       andConditions.push({
@@ -32,6 +33,14 @@ async function getProducts(category?: string, search?: string) {
             },
           },
         ],
+      });
+    }
+    if (brandValue) {
+      andConditions.push({
+        brand: {
+          equals: brandValue,
+          mode: 'insensitive' as const,
+        },
       });
     }
     andConditions.push(
@@ -125,13 +134,55 @@ async function getProductNames(category?: string) {
   }
 }
 
+async function getBrands(category?: string) {
+  try {
+    const where: Prisma.ProductWhereInput = {
+      costPrice: { not: null },
+      ...(category
+        ? {
+            category: {
+              equals: category,
+              mode: 'insensitive' as const,
+            },
+          }
+        : {}),
+      ...(category
+        ? {
+            OR: [
+              { stockType: 'pronta_entrega', stockAvailable: { gt: 0 } },
+              { stockType: 'sob_encomenda', stockDistributor: { gt: 0 } },
+            ],
+          }
+        : {
+            stockType: 'pronta_entrega',
+            stockAvailable: { gt: 0 },
+          }),
+    };
+
+    const brands = await prisma.product.findMany({
+      where,
+      select: { brand: true },
+      distinct: ['brand'],
+      orderBy: { brand: 'asc' },
+    });
+
+    return brands?.map((item) => item?.brand ?? '').filter(Boolean) ?? [];
+  } catch (error) {
+    console.error('Error fetching brands:', error);
+    return [];
+  }
+}
+
 export default async function ProdutosPage({ searchParams }: PageProps) {
   const categoria = searchParams?.categoria as string | undefined;
   const busca =
     typeof searchParams?.busca === 'string' ? searchParams?.busca : undefined;
-  const products = await getProducts(categoria, busca);
+  const marca =
+    typeof searchParams?.marca === 'string' ? searchParams?.marca : undefined;
+  const products = await getProducts(categoria, busca, marca);
   const categories = await getCategories();
   const productNames = await getProductNames(categoria);
+  const brands = await getBrands(categoria);
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8">
@@ -151,6 +202,7 @@ export default async function ProdutosPage({ searchParams }: PageProps) {
           categories={categories}
           selectedCategory={categoria}
           productNames={productNames}
+          brands={brands}
         />
 
         {/* Products Grid */}

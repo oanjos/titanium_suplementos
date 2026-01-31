@@ -46,6 +46,23 @@ export async function POST(request: NextRequest) {
     const cpf = String(customer?.cpf ?? '').replace(/\D/g, '');
     const orderNumber = generateOrderNumber();
 
+    if (cpf) {
+      await prisma.customerProfile.upsert({
+        where: { cpf },
+        create: {
+          cpf,
+          name: customer?.name ?? '',
+          email: customer?.email ?? '',
+          phone: customer?.phone ?? '',
+        },
+        update: {
+          name: customer?.name ?? '',
+          email: customer?.email ?? '',
+          phone: customer?.phone ?? '',
+        },
+      });
+    }
+ 
     const order = await prisma.order.create({
       data: {
         orderNumber,
@@ -67,23 +84,6 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-
-    if (cpf) {
-      await prisma.customerProfile.upsert({
-        where: { cpf },
-        create: {
-          cpf,
-          name: customer?.name ?? '',
-          email: customer?.email ?? '',
-          phone: customer?.phone ?? '',
-        },
-        update: {
-          name: customer?.name ?? '',
-          email: customer?.email ?? '',
-          phone: customer?.phone ?? '',
-        },
-      });
-    }
 
     const baseUrl = getBaseUrl();
     const preferencePayload = {

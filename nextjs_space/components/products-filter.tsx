@@ -4,17 +4,26 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface ProductsFilterProps {
   categories: string[];
   productNames: string[];
+  brands: string[];
   selectedCategory?: string;
 }
 
 export default function ProductsFilter({
   categories,
   productNames,
+  brands,
   selectedCategory,
 }: ProductsFilterProps) {
   const router = useRouter();
@@ -27,7 +36,9 @@ export default function ProductsFilter({
     'CREATINA',
     'VITAMINAS',
     'PROTEINAS',
-    'MINERAIS',
+    'PRE TREINO',
+    'PRE TREINOS',
+    'PRÉ-TREINO',
     'OMEGA 3',
     'COLAGENO',
     'DOCE FIT',
@@ -50,6 +61,16 @@ export default function ProductsFilter({
     router.push(`/produtos?${params.toString()}`);
   };
 
+  const handleBrandChange = (brand: string) => {
+    const params = new URLSearchParams(searchParams?.toString() ?? '');
+    if (brand === 'all') {
+      params.delete('marca');
+    } else {
+      params.set('marca', brand);
+    }
+    router.push(`/produtos?${params.toString()}`);
+  };
+
   const applyProductSearch = (value: string) => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
     const trimmed = value.trim();
@@ -59,10 +80,6 @@ export default function ProductsFilter({
       params.set('busca', trimmed);
     }
     router.push(`/produtos?${params.toString()}`);
-  };
-
-  const clearFilters = () => {
-    router.push('/produtos');
   };
 
   const sortedCategories = useMemo(() => {
@@ -161,12 +178,22 @@ export default function ProductsFilter({
             </div>
           )}
         </div>
-        {(selectedCategory || searchValue) && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-2">
-            <X className="h-4 w-4" />
-            Limpar Filtros
-          </Button>
-        )}
+        <Select
+          onValueChange={handleBrandChange}
+          value={searchParams?.get('marca') ?? ''}
+        >
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Fabricante" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {(brands ?? []).map((brand) => (
+              <SelectItem key={brand} value={brand}>
+                {brand}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

@@ -41,7 +41,7 @@ const categories = [
   { name: 'CREATINA', value: 'CREATINA', icon: Zap },
   { name: 'VITAMINAS', value: 'VITAMINAS', icon: Package },
   { name: 'PROTEINAS', value: 'PROTEINAS', icon: Package },
-  { name: 'MINERAIS', value: 'MINERAIS', icon: Package },
+  { name: 'PRE TREINO', value: 'PRE TREINOS', icon: Zap },
   { name: 'OMEGA 3', value: 'OMEGA 3', icon: Package },
   { name: 'COLAGENO', value: 'COLAGENO', icon: Package },
   { name: 'DOCE FIT', value: 'DOCE FIT', icon: Package },

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, Zap } from 'lucide-react';
+import { ShoppingCart, Zap, Users } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
 import { Button } from '@/components/ui/button';
 
@@ -43,20 +43,39 @@ export default function Header() {
             >
               Produtos
             </Link>
+            <Link
+              href="/rastrear-pedido"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              Rastrear Pedido
+            </Link>
+            <Link
+              href="/admin/login"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              Parceiros
+            </Link>
           </nav>
 
           {/* Cart Button */}
-          <Link href="/carrinho">
-            <Button variant="outline" size="sm" className="relative gap-2">
-              <ShoppingCart className="h-4 w-4" />
-              <span className="hidden sm:inline">Carrinho</span>
-              {mounted && itemsCount > 0 && (
-                <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-black">
-                  {itemsCount}
-                </span>
-              )}
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/admin/login" aria-label="Acesso parceiros">
+              <Button variant="outline" size="sm" className="h-9 w-9 p-0">
+                <Users className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/carrinho">
+              <Button variant="outline" size="sm" className="relative gap-2">
+                <ShoppingCart className="h-4 w-4" />
+                <span className="hidden sm:inline">Carrinho</span>
+                {mounted && itemsCount > 0 && (
+                  <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-black">
+                    {itemsCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </header>
