@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { MercadoPagoConfig, Preference } from 'mercadopago';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,41 +87,32 @@ export async function POST(request: NextRequest) {
     });
 
     const baseUrl = getBaseUrl();
-    const preferencePayload = {
-      items: items.map((item: any) => ({
-        id: String(item?.productId ?? ''),
-        title: item?.title ?? item?.productName ?? 'Produto',
-        quantity: Number(item?.quantity ?? 1),
-        unit_price: Number(item?.unitPrice ?? 0),
-        currency_id: 'BRL',
-      })),
-      external_reference: order.orderNumber,
-      notification_url: `${baseUrl}/api/webhooks/mercadopago`,
-      back_urls: {
-        success: `${baseUrl}/confirmacao?pedido=${order.orderNumber}`,
-        pending: `${baseUrl}/confirmacao?pedido=${order.orderNumber}`,
-        failure: `${baseUrl}/checkout?erro=pagamento`,
-      },
-      auto_return: 'approved',
-    };
+    const client = new MercadoPagoConfig({ accessToken });
+    const preference = new Preference(client);
 
-    const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+    const mpData = await preference.create({
+      body: {
+        items: items.map((item: any) => ({
+          id: String(item?.productId ?? ''),
+          title: item?.title ?? item?.productName ?? 'Produto',
+          quantity: Number(item?.quantity ?? 1),
+          unit_price: Number(item?.unitPrice ?? 0),
+          currency_id: 'BRL',
+        })),
+        external_reference: order.orderNumber,
+        notification_url: `${baseUrl}/api/webhooks/mercadopago`,
+        back_urls: {
+          success: `${baseUrl}/confirmacao?pedido=${order.orderNumber}`,
+          pending: `${baseUrl}/confirmacao?pedido=${order.orderNumber}`,
+          failure: `${baseUrl}/checkout?erro=pagamento`,
+        },
+        auto_return: 'approved',
+        payment_methods: {
+          excluded_payment_methods: [],
+          excluded_payment_types: [],
+        },
       },
-      body: JSON.stringify(preferencePayload),
     });
-
-    const mpData = await mpResponse.json();
-    if (!mpResponse.ok) {
-      console.error('Erro Mercado Pago:', mpData);
-      return NextResponse.json(
-        { error: 'Erro ao criar pagamento no Mercado Pago' },
-        { status: 500 }
-      );
-    }
 
     return NextResponse.json({
       success: true,

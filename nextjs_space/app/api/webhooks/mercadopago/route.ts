@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import prisma from '@/lib/db';
+import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,20 +82,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false }, { status: 401 });
     }
 
-    const paymentResponse = await fetch(
-      `https://api.mercadopago.com/v1/payments/${dataId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
-    const payment = await paymentResponse.json();
-
-    if (!paymentResponse.ok) {
-      console.error('Erro ao buscar pagamento MP:', payment);
-      return NextResponse.json({ ok: true });
-    }
+    const client = new MercadoPagoConfig({ accessToken });
+    const paymentClient = new Payment(client);
+    const payment = await paymentClient.get({ id: String(dataId) });
 
     const orderNumber = payment?.external_reference;
     if (!orderNumber) {
