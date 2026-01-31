@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
             { id: 'ticket' },
             { id: 'atm' },
           ],
+          default_payment_method_id: 'pix',
         },
       },
     });
