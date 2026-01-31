@@ -90,15 +90,29 @@ export async function POST(request: NextRequest) {
     const client = new MercadoPagoConfig({ accessToken });
     const preference = new Preference(client);
 
+    const totalWithDiscount = Number(totalAmount ?? 0);
+    const itemsPayload =
+      totalWithDiscount > 0
+        ? [
+            {
+              id: 'pedido',
+              title: 'Pedido Titanium Suplementos',
+              quantity: 1,
+              unit_price: totalWithDiscount,
+              currency_id: 'BRL',
+            },
+          ]
+        : items.map((item: any) => ({
+            id: String(item?.productId ?? ''),
+            title: item?.title ?? item?.productName ?? 'Produto',
+            quantity: Number(item?.quantity ?? 1),
+            unit_price: Number(item?.unitPrice ?? 0),
+            currency_id: 'BRL',
+          }));
+
     const mpData = await preference.create({
       body: {
-        items: items.map((item: any) => ({
-          id: String(item?.productId ?? ''),
-          title: item?.title ?? item?.productName ?? 'Produto',
-          quantity: Number(item?.quantity ?? 1),
-          unit_price: Number(item?.unitPrice ?? 0),
-          currency_id: 'BRL',
-        })),
+        items: itemsPayload,
         external_reference: order.orderNumber,
         notification_url: `${baseUrl}/api/webhooks/mercadopago`,
         back_urls: {
