@@ -113,9 +113,12 @@ export async function POST(request: NextRequest) {
             { id: 'ticket' },
             { id: 'atm' },
           ],
-          default_payment_method_id: 'pix',
         },
       },
+    });
+
+    console.log('MP preference payment_methods:', {
+      payment_methods: mpData?.payment_methods ?? null,
     });
 
     return NextResponse.json({
