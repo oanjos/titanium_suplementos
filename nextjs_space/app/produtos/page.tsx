@@ -98,7 +98,7 @@ async function getProductNames(category?: string) {
     const where = {
       costPrice: { not: null },
       NOT: {
-        stockType: 'sem_estoque',
+        stockType: 'sem_estoque' as const,
       },
       ...(category
         ? {
