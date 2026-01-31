@@ -41,7 +41,14 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-          <Toaster position="top-center" richColors />
+          <Toaster
+            position="top-right"
+            richColors
+            toastOptions={{
+              className:
+                'data-[state=open]:slide-in-from-right-full data-[state=closed]:slide-out-to-right-full',
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>

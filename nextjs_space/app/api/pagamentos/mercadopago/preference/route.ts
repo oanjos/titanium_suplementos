@@ -117,9 +117,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('MP preference payment_methods:', {
-      payment_methods: mpData?.payment_methods ?? null,
-    });
+    console.log(
+      'MP payment_methods full:',
+      JSON.stringify(mpData?.payment_methods ?? null, null, 2)
+    );
 
     return NextResponse.json({
       success: true,

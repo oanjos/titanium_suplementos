@@ -184,7 +184,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <SessionProvider>
       <AdminLayoutContent>{children}</AdminLayoutContent>
-      <Toaster position="top-center" richColors />
+      <Toaster
+        position="top-right"
+        richColors
+        toastOptions={{
+          className:
+            'data-[state=open]:slide-in-from-right-full data-[state=closed]:slide-out-to-right-full',
+        }}
+      />
     </SessionProvider>
   );
 }
