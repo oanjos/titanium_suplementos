@@ -1,4 +1,5 @@
 import prisma from '@/lib/db';
+import { Prisma } from '@prisma/client';
 import ProductCard from '@/components/product-card';
 import ProductsFilter from '@/components/products-filter';
 
@@ -95,10 +96,10 @@ async function getCategories() {
 
 async function getProductNames(category?: string) {
   try {
-    const where = {
+    const where: Prisma.ProductWhereInput = {
       costPrice: { not: null },
       NOT: {
-        stockType: 'sem_estoque' as const,
+        stockType: 'sem_estoque',
       },
       ...(category
         ? {
