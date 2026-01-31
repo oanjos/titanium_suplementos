@@ -237,7 +237,7 @@ async function main() {
 
   for (const product of products) {
       const variants = product.variants || [];
-      const sku = product.sku || variants[0]?.sku || null;
+      const sku = variants[0]?.sku || null;
       const stockAvailable = variants.reduce(
         (sum: number, v: any) => sum + (v?.stockQuantity || 0),
         0
