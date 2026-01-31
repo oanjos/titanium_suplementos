@@ -115,8 +115,8 @@ function ConfirmacaoContent() {
             </div>
 
             <div className="pt-4 border-t">
-              <p className="text-sm text-muted-foreground mb-2">Endereço de Entrega</p>
-              <p className="text-sm">{order?.customerAddress ?? ''}</p>
+              <p className="text-sm text-muted-foreground mb-2">Retirada na Loja</p>
+              <p className="text-sm">Retirada na loja</p>
             </div>
           </CardContent>
         </Card>

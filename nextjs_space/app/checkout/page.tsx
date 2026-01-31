@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCart } from '@/hooks/use-cart';
@@ -8,13 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingBag, CreditCard, Tag, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -27,6 +20,8 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState('');
   const [discount, setDiscount] = useState<any>(null);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [loadingCustomer, setLoadingCustomer] = useState(false);
+  const cpfLookupRef = useRef<NodeJS.Timeout | null>(null);
 
   const subtotal = getTotal?.() ?? 0;
   const shippingCost = 0; // Frete grátis
@@ -35,22 +30,64 @@ export default function CheckoutPage() {
 
   // Form state
   const [formData, setFormData] = useState({
+    cpf: '',
     customerName: '',
     customerEmail: '',
     customerPhone: '',
-    cep: '',
-    address: '',
-    number: '',
-    complement: '',
-    neighborhood: '',
-    city: '',
-    state: '',
-    paymentMethod: 'pix',
   });
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  const normalizeCpf = (value: string) => value.replace(/\D/g, '').slice(0, 11);
+
+  const formatCpf = (value: string) => {
+    const digits = normalizeCpf(value);
+    const part1 = digits.slice(0, 3);
+    const part2 = digits.slice(3, 6);
+    const part3 = digits.slice(6, 9);
+    const part4 = digits.slice(9, 11);
+    if (digits.length <= 3) return part1;
+    if (digits.length <= 6) return `${part1}.${part2}`;
+    if (digits.length <= 9) return `${part1}.${part2}.${part3}`;
+    return `${part1}.${part2}.${part3}-${part4}`;
+  };
+
+  useEffect(() => {
+    const cpf = normalizeCpf(formData.cpf ?? '');
+    if (cpf.length !== 11) {
+      return;
+    }
+    if (cpfLookupRef.current) {
+      clearTimeout(cpfLookupRef.current);
+    }
+    cpfLookupRef.current = setTimeout(async () => {
+      setLoadingCustomer(true);
+      try {
+        const response = await fetch(`/api/clientes/${cpf}`);
+        const data = await response.json();
+        if (response.ok && data?.found) {
+          setFormData((prev) => ({
+            ...prev,
+            customerName: data?.customer?.name ?? prev.customerName,
+            customerEmail: data?.customer?.email ?? prev.customerEmail,
+            customerPhone: data?.customer?.phone ?? prev.customerPhone,
+          }));
+        }
+      } catch (error) {
+        // ignore lookup errors
+      } finally {
+        setLoadingCustomer(false);
+      }
+    }, 350);
+
+    return () => {
+      if (cpfLookupRef.current) {
+        clearTimeout(cpfLookupRef.current);
+      }
+    };
+  }, [formData.cpf]);
 
   const applyCoupon = async () => {
     if (!couponCode?.trim()) {
@@ -91,7 +128,7 @@ export default function CheckoutPage() {
     e.preventDefault();
 
     // Validar formulário
-    const requiredFields = ['customerName', 'customerEmail', 'customerPhone', 'cep', 'address', 'number', 'neighborhood', 'city', 'state'];
+    const requiredFields = ['cpf', 'customerName', 'customerEmail', 'customerPhone'];
     const missingFields = requiredFields.filter((field) => !formData[field as keyof typeof formData]?.trim());
 
     if (missingFields?.length > 0) {
@@ -99,18 +136,23 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (normalizeCpf(formData.cpf ?? '').length !== 11) {
+      toast.error('CPF invÃ¡lido');
+      return;
+    }
+
     setLoading(true);
     try {
       const orderData = {
         customer: {
+          cpf: normalizeCpf(formData?.cpf ?? ''),
           name: formData?.customerName ?? '',
           email: formData?.customerEmail ?? '',
           phone: formData?.customerPhone ?? '',
-          address: `${formData?.address ?? ''}, ${formData?.number ?? ''}, ${formData?.complement ?? ''}, ${formData?.neighborhood ?? ''}, ${formData?.city ?? ''} - ${formData?.state ?? ''}, CEP: ${formData?.cep ?? ''}`,
+          address: 'Retirada na loja',
         },
         items: items?.map((item) => ({
           productId: item?.productId ?? 0,
-          variantId: item?.variantId ?? 0,
           quantity: item?.quantity ?? 0,
           unitPrice: item?.price ?? 0,
         })) ?? [],
@@ -119,10 +161,10 @@ export default function CheckoutPage() {
         discountCodeId: discount?.id ?? null,
         shippingCost,
         totalAmount: total,
-        paymentMethod: formData?.paymentMethod ?? 'pix',
+        paymentMethod: 'pix',
       };
 
-      const response = await fetch('/api/pedidos/criar', {
+      const response = await fetch('/api/pagamentos/mercadopago/preference', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),
@@ -132,6 +174,10 @@ export default function CheckoutPage() {
 
       if (response.ok && data?.success) {
         clearCart?.();
+        if (data?.initPoint) {
+          window.location.href = data.initPoint;
+          return;
+        }
         router.push(`/confirmacao?pedido=${data?.orderNumber ?? ''}`);
       } else {
         toast.error(data?.error ?? 'Erro ao criar pedido');
@@ -175,6 +221,23 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
+                  <Label htmlFor="cpf">CPF *</Label>
+                  <Input
+                    id="cpf"
+                    value={formatCpf(formData?.cpf ?? '')}
+                    onChange={(e) =>
+                      handleInputChange('cpf', normalizeCpf(e?.target?.value ?? ''))
+                    }
+                    placeholder="000.000.000-00"
+                    required
+                  />
+                  {loadingCustomer && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Buscando seus dados...
+                    </p>
+                  )}
+                </div>
+                <div>
                   <Label htmlFor="name">Nome Completo *</Label>
                   <Input
                     id="name"
@@ -208,107 +271,6 @@ export default function CheckoutPage() {
               </CardContent>
             </Card>
 
-            {/* Address */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Endereço de Entrega</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="cep">CEP *</Label>
-                    <Input
-                      id="cep"
-                      value={formData?.cep ?? ''}
-                      onChange={(e) => handleInputChange('cep', e?.target?.value ?? '')}
-                      placeholder="00000-000"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2">
-                    <Label htmlFor="address">Endereço *</Label>
-                    <Input
-                      id="address"
-                      value={formData?.address ?? ''}
-                      onChange={(e) => handleInputChange('address', e?.target?.value ?? '')}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="number">Número *</Label>
-                    <Input
-                      id="number"
-                      value={formData?.number ?? ''}
-                      onChange={(e) => handleInputChange('number', e?.target?.value ?? '')}
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="complement">Complemento</Label>
-                  <Input
-                    id="complement"
-                    value={formData?.complement ?? ''}
-                    onChange={(e) => handleInputChange('complement', e?.target?.value ?? '')}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="neighborhood">Bairro *</Label>
-                    <Input
-                      id="neighborhood"
-                      value={formData?.neighborhood ?? ''}
-                      onChange={(e) => handleInputChange('neighborhood', e?.target?.value ?? '')}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="city">Cidade *</Label>
-                    <Input
-                      id="city"
-                      value={formData?.city ?? ''}
-                      onChange={(e) => handleInputChange('city', e?.target?.value ?? '')}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="state">Estado *</Label>
-                    <Input
-                      id="state"
-                      value={formData?.state ?? ''}
-                      onChange={(e) => handleInputChange('state', e?.target?.value ?? '')}
-                      placeholder="SP"
-                      maxLength={2}
-                      required
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Payment */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Método de Pagamento</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Select
-                  value={formData?.paymentMethod ?? 'pix'}
-                  onValueChange={(value) => handleInputChange('paymentMethod', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pix">Pix</SelectItem>
-                    <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
-                    <SelectItem value="debit_card">Cartão de Débito</SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Summary */}
@@ -321,7 +283,7 @@ export default function CheckoutPage() {
                 {/* Items */}
                 <div className="space-y-3 max-h-60 overflow-y-auto">
                   {items?.map((item) => (
-                    <div key={`${item?.productId ?? 0}-${item?.variantId ?? 0}`} className="flex gap-3">
+                    <div key={`${item?.productId ?? 0}`} className="flex gap-3">
                       <div className="relative w-16 h-16 flex-shrink-0 bg-secondary rounded overflow-hidden">
                         <Image
                           src={item?.imageUrl ?? ''}
@@ -333,7 +295,9 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex-1 text-sm">
                         <p className="font-semibold line-clamp-1">{item?.productName ?? ''}</p>
-                        <p className="text-xs text-muted-foreground">{item?.variantName ?? ''}</p>
+                        {item?.sku && (
+                          <p className="text-xs text-muted-foreground">{item?.sku}</p>
+                        )}
                         <p className="text-xs">
                           {item?.quantity ?? 0}x R$ {item?.price?.toFixed(2)?.replace('.', ',') ?? '0,00'}
                         </p>

@@ -37,7 +37,7 @@ export default function CarrinhoPage() {
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
           {items?.map((item) => (
-            <Card key={`${item?.productId ?? 0}-${item?.variantId ?? 0}`}>
+            <Card key={`${item?.productId ?? 0}`}>
               <CardContent className="p-4">
                 <div className="flex gap-4">
                   {/* Image */}
@@ -58,7 +58,9 @@ export default function CarrinhoPage() {
                         {item?.brand ?? ''}
                       </p>
                       <h3 className="font-semibold">{item?.productName ?? ''}</h3>
-                      <p className="text-sm text-muted-foreground">{item?.variantName ?? ''}</p>
+                      {item?.sku && (
+                        <p className="text-sm text-muted-foreground">{item?.sku}</p>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -71,7 +73,6 @@ export default function CarrinhoPage() {
                           onClick={() =>
                             updateQuantity?.(
                               item?.productId ?? 0,
-                              item?.variantId ?? 0,
                               (item?.quantity ?? 1) - 1
                             )
                           }
@@ -88,7 +89,6 @@ export default function CarrinhoPage() {
                           onClick={() =>
                             updateQuantity?.(
                               item?.productId ?? 0,
-                              item?.variantId ?? 0,
                               (item?.quantity ?? 0) + 1
                             )
                           }
@@ -111,7 +111,7 @@ export default function CarrinhoPage() {
                     variant="ghost"
                     size="icon"
                     className="flex-shrink-0"
-                    onClick={() => removeItem?.(item?.productId ?? 0, item?.variantId ?? 0)}
+                    onClick={() => removeItem?.(item?.productId ?? 0)}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>

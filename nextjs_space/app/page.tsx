@@ -14,9 +14,10 @@ async function getFeaturedProducts() {
     const products = await prisma.product.findMany({
       where: {
         stockType: 'pronta_entrega',
-      },
-      include: {
-        variants: true,
+        costPrice: { not: null },
+        stockAvailable: {
+          gt: 0,
+        },
       },
       take: 6,
       orderBy: {
@@ -28,10 +29,6 @@ async function getFeaturedProducts() {
     return products?.map((product: any) => ({
       ...product,
       price: Number(product?.price ?? 0),
-      variants: product?.variants?.map((variant: any) => ({
-        ...variant,
-        additionalPrice: Number(variant?.additionalPrice ?? 0),
-      })) ?? [],
     })) ?? [];
   } catch (error) {
     console.error('Error fetching featured products:', error);

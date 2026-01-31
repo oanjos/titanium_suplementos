@@ -17,6 +17,7 @@ interface ProductCardProps {
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const price = Number(product?.price ?? 0);
   const isInStock = product?.stockType === 'pronta_entrega';
+  const isOutOfStock = product?.stockType === 'sem_estoque';
 
   return (
     <motion.div
@@ -35,11 +36,19 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
             <div className="absolute top-3 right-3">
-              <Badge variant={isInStock ? 'success' : 'warning'} className="gap-1">
+              <Badge
+                variant={isInStock ? 'success' : isOutOfStock ? 'destructive' : 'warning'}
+                className="gap-1"
+              >
                 {isInStock ? (
                   <>
                     <Package className="h-3 w-3" />
                     Pronta Entrega
+                  </>
+                ) : isOutOfStock ? (
+                  <>
+                    <Package className="h-3 w-3" />
+                    Sem Estoque
                   </>
                 ) : (
                   <>

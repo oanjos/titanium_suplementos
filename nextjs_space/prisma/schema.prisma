@@ -10,46 +10,108 @@ datasource db {
 model Product {
   id               Int      @id @default(autoincrement())
   name             String
+  aliasName        String?  @map("alias_name")
+  groupCode        String?  @map("group_code")
+  needsAttention   Boolean  @default(true) @map("needs_attention")
   description      String   @db.Text
   category         String
   brand            String
+  sku              String?  @unique
   costPrice        Decimal? @map("cost_price") @db.Decimal(10, 2) // Preço de custo
   marginPercentage Decimal? @map("margin_percentage") @db.Decimal(5, 2) // % de margem
   price            Decimal  @db.Decimal(10, 2) // Preço final (pode ser calculado: custo + margem)
   imageUrl         String   @map("image_url") @db.Text
   supplierUrl      String?  @map("supplier_url") @db.Text // Link do anúncio do distribuidor (referência)
-  supplierCode     String?  @map("supplier_code") // Código do produto no distribuidor
-  stockType        String   @map("stock_type") // 'pronta_entrega' ou 'sob_encomenda'
+  stockType        StockType @default(pronta_entrega) @map("stock_type")
+  stockAvailable   Int      @default(0) @map("stock_available")
+  stockDistributor Int      @default(0) @map("stock_distributor")
   createdAt        DateTime @default(now()) @map("created_at")
 
-  variants   ProductVariant[]
   orderItems OrderItem[]
 
   @@map("products")
 }
 
-model ProductVariant {
-  id              Int      @id @default(autoincrement())
-  productId       Int      @map("product_id")
-  name            String   // ex: "Chocolate 1kg", "Baunilha 900g"
-  sku             String
-  additionalPrice Decimal  @map("additional_price") @db.Decimal(10, 2) // preço adicional em relação ao base
-  stockQuantity   Int      @map("stock_quantity")
-  createdAt       DateTime @default(now()) @map("created_at")
 
-  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  orderItems OrderItem[]
+enum StockType {
+  pronta_entrega
+  sob_encomenda
+  sem_estoque
+  @@map("stock_type_enum")
+}
 
-  @@map("product_variants")
+model DistributorProduct {
+  id                         Int      @id @default(autoincrement())
+  sourceId                   BigInt?  @map("source_id")
+  code                       String   @unique @map("code")
+  description                String?  @db.Text @map("description")
+  unit                       String?  @map("unit")
+  ncm                        String?  @map("ncm")
+  origin                     String?  @map("origin")
+  price                      Decimal? @db.Decimal(10, 2) @map("price")
+  ipiFixedValue              Decimal? @db.Decimal(10, 2) @map("ipi_fixed_value")
+  observations               String?  @db.Text @map("observations")
+  status                     String?  @map("status")
+  stock                      Decimal? @db.Decimal(10, 2) @map("stock")
+  costPrice                  Decimal? @db.Decimal(10, 2) @map("cost_price")
+  supplierCode               String?  @map("supplier_code")
+  supplier                   String?  @map("supplier")
+  location                   String?  @map("location")
+  stockMax                   Decimal? @db.Decimal(10, 2) @map("stock_max")
+  stockMin                   Decimal? @db.Decimal(10, 2) @map("stock_min")
+  weightNetKg                Decimal? @db.Decimal(10, 3) @map("weight_net_kg")
+  weightGrossKg              Decimal? @db.Decimal(10, 3) @map("weight_gross_kg")
+  gtinEan                    String?  @map("gtin_ean")
+  gtinEanPackage             String?  @map("gtin_ean_package")
+  productWidth               Decimal? @db.Decimal(10, 2) @map("product_width")
+  productHeight              Decimal? @db.Decimal(10, 2) @map("product_height")
+  productDepth               Decimal? @db.Decimal(10, 2) @map("product_depth")
+  expiryDate                 DateTime? @map("expiry_date")
+  supplierProductDescription String?  @db.Text @map("supplier_product_description")
+  descriptionComplement      String?  @db.Text @map("description_complement")
+  itemsPerBox                Decimal? @db.Decimal(10, 2) @map("items_per_box")
+  productVariation           String?  @map("product_variation")
+  productionType             String?  @map("production_type")
+  ipiClass                   String?  @map("ipi_class")
+  serviceListCode            String?  @map("service_list_code")
+  itemType                   String?  @map("item_type")
+  tags                       String?  @db.Text @map("tags")
+  taxes                      String?  @db.Text @map("taxes")
+  parentCode                 String?  @map("parent_code")
+  integrationCode            String?  @map("integration_code")
+  productGroup               String?  @map("product_group")
+  brand                      String?  @map("brand")
+  cest                       String?  @map("cest")
+  volumes                    Decimal? @db.Decimal(10, 2) @map("volumes")
+  shortDescription           String?  @db.Text @map("short_description")
+  crossDocking               String?  @map("cross_docking")
+  externalImagesUrl          String?  @db.Text @map("external_images_url")
+  externalLink               String?  @db.Text @map("external_link")
+  warrantyMonthsSupplier     Decimal? @db.Decimal(10, 2) @map("warranty_months_supplier")
+  cloneParentData            String?  @map("clone_parent_data")
+  productCondition           String?  @map("product_condition")
+  freeShipping               String?  @map("free_shipping")
+  fciNumber                  String?  @map("fci_number")
+  video                      String?  @db.Text @map("video")
+  department                 String?  @map("department")
+  unitMeasure                String?  @map("unit_measure")
+  purchasePrice              Decimal? @db.Decimal(10, 2) @map("purchase_price")
+  productCategory            String?  @map("product_category")
+  additionalInfo             String?  @db.Text @map("additional_info")
+  createdAt                  DateTime @default(now()) @map("created_at")
+
+  @@map("distributor_products")
 }
 
 model DiscountCode {
   id            Int      @id @default(autoincrement())
   code          String   @unique
+  partnerName   String?  @map("partner_name")
   discountType  String   @map("discount_type") // 'percentage' ou 'fixed'
   discountValue Decimal  @map("discount_value") @db.Decimal(10, 2)
   minPurchase   Decimal  @map("min_purchase") @db.Decimal(10, 2)
-  maxUses       Int      @map("max_uses")
+  maxUses       Int?     @map("max_uses")
+  unlimitedUses Boolean  @default(false) @map("unlimited_uses")
   usesCount     Int      @default(0) @map("uses_count")
   validFrom     DateTime @map("valid_from")
   validUntil    DateTime @map("valid_until")
@@ -64,10 +126,7 @@ model DiscountCode {
 model Order {
   id              Int      @id @default(autoincrement())
   orderNumber     String   @unique @map("order_number")
-  customerName    String   @map("customer_name")
-  customerEmail   String   @map("customer_email")
-  customerPhone   String   @map("customer_phone")
-  customerAddress String   @map("customer_address") @db.Text
+  customerCpf     String?  @map("customer_cpf")
   subtotal        Decimal  @db.Decimal(10, 2)
   discountAmount  Decimal  @default(0) @map("discount_amount") @db.Decimal(10, 2)
   shippingCost    Decimal  @map("shipping_cost") @db.Decimal(10, 2)
@@ -77,17 +136,28 @@ model Order {
   discountCodeId  Int?     @map("discount_code_id")
   createdAt       DateTime @default(now()) @map("created_at")
 
+  customerProfile CustomerProfile? @relation(fields: [customerCpf], references: [cpf])
   discountCode DiscountCode? @relation(fields: [discountCodeId], references: [id])
   items        OrderItem[]
 
   @@map("orders")
 }
 
+model CustomerProfile {
+  cpf       String   @id @map("cpf")
+  name      String   @map("name")
+  email     String   @map("email")
+  phone     String   @map("phone")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("customer_profiles")
+}
+
 model OrderItem {
   id               Int      @id @default(autoincrement())
   orderId          Int      @map("order_id")
   productId        Int      @map("product_id")
-  productVariantId Int?     @map("product_variant_id")
   quantity         Int
   unitPrice        Decimal  @map("unit_price") @db.Decimal(10, 2)
   subtotal         Decimal  @db.Decimal(10, 2)
@@ -95,7 +165,17 @@ model OrderItem {
 
   order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product        Product         @relation(fields: [productId], references: [id])
-  productVariant ProductVariant? @relation(fields: [productVariantId], references: [id])
 
   @@map("order_items")
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String   // Hash bcrypt
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("admins")
 }

@@ -49,9 +49,10 @@ export async function POST(request: NextRequest) {
 
     // Validar limite de uso
     const usesCount = discountCode?.usesCount ?? 0;
-    const maxUses = discountCode?.maxUses ?? 0;
+    const maxUses = discountCode?.maxUses ?? null;
+    const unlimitedUses = discountCode?.unlimitedUses ?? false;
 
-    if (usesCount >= maxUses) {
+    if (!unlimitedUses && maxUses !== null && usesCount >= maxUses) {
       return NextResponse.json(
         { error: 'Este cupom atingiu o limite de uso' },
         { status: 400 }

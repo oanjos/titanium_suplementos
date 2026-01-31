@@ -9,29 +9,21 @@ export type Product = {
   price: Decimal | number;
   imageUrl: string;
   stockType: string;
-  createdAt: Date;
-  variants?: ProductVariant[];
-};
-
-export type ProductVariant = {
-  id: number;
-  productId: number;
-  name: string;
-  sku: string;
-  additionalPrice: Decimal | number;
-  stockQuantity: number;
+  sku?: string | null;
+  groupCode?: string | null;
+  stockAvailable?: number | null;
+  stockDistributor?: number | null;
   createdAt: Date;
 };
 
 export type CartItem = {
   productId: number;
-  variantId: number;
   quantity: number;
   productName: string;
-  variantName: string;
   imageUrl: string;
   price: number;
   brand: string;
+  sku?: string | null;
 };
 
 export type DiscountCode = {
@@ -50,10 +42,7 @@ export type DiscountCode = {
 export type Order = {
   id: number;
   orderNumber: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  customerAddress: string;
+  customerCpf?: string | null;
   subtotal: Decimal;
   discountAmount: Decimal;
   shippingCost: Decimal;

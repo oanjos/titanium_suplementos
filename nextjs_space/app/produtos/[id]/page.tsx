@@ -15,9 +15,6 @@ async function getProduct(id: string) {
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      include: {
-        variants: true,
-      },
     });
     
     if (!product) return null;
@@ -26,10 +23,6 @@ async function getProduct(id: string) {
     return {
       ...product,
       price: Number(product?.price ?? 0),
-      variants: product?.variants?.map((variant: any) => ({
-        ...variant,
-        additionalPrice: Number(variant?.additionalPrice ?? 0),
-      })) ?? [],
     };
   } catch (error) {
     console.error('Error fetching product:', error);

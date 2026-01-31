@@ -27,7 +27,6 @@ async function main() {
   // Limpar dados existentes
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
-  await prisma.productVariant.deleteMany();
   await prisma.product.deleteMany();
   await prisma.discountCode.deleteMany();
 
@@ -237,15 +236,20 @@ async function main() {
   console.log('🔨 Criando produtos e variantes...');
 
   for (const product of products) {
-    const { variants, ...productData } = product;
-    const createdProduct = await prisma.product.create({
-      data: {
-        ...productData,
-        variants: {
-          create: variants,
+      const variants = product.variants || [];
+      const sku = product.sku || variants[0]?.sku || null;
+      const stockAvailable = variants.reduce(
+        (sum: number, v: any) => sum + (v?.stockQuantity || 0),
+        0
+      );
+      const { variants: _variants, ...productData } = product;
+      const createdProduct = await prisma.product.create({
+        data: {
+          ...productData,
+          sku,
+          stockAvailable,
         },
-      },
-    });
+      });
     console.log(`✅ Produto criado: ${createdProduct.name}`);
   }
 

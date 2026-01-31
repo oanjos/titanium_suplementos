@@ -44,7 +44,7 @@ export default function RastrearPedidoPage() {
   };
 
   const getStatusInfo = (status: string) => {
-    const statusMap: Record<string, { label: string; icon: any; variant: any }> = {
+            const statusMap: Record<string, { label: string; icon: any; variant: any }> = {
       pending: { label: 'Aguardando Pagamento', icon: Clock, variant: 'warning' },
       paid: { label: 'Pagamento Confirmado', icon: CheckCircle2, variant: 'success' },
       processing: { label: 'Em Preparação', icon: Box, variant: 'default' },
@@ -136,7 +136,9 @@ export default function RastrearPedidoPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Cliente</p>
-                  <p className="font-semibold">{order?.customerName ?? ''}</p>
+                  <p className="font-semibold">
+                    {order?.customerProfile?.name ?? 'Cliente'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total</p>
@@ -148,8 +150,8 @@ export default function RastrearPedidoPage() {
 
               {/* Address */}
               <div className="pt-4 border-t">
-                <p className="text-sm text-muted-foreground mb-2">Endereço de Entrega</p>
-                <p className="text-sm">{order?.customerAddress ?? ''}</p>
+                <p className="text-sm text-muted-foreground mb-2">Retirada na Loja</p>
+                <p className="text-sm">Retirada na loja</p>
               </div>
 
               {/* Timeline */}

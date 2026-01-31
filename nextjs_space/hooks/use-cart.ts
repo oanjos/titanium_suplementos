@@ -8,8 +8,8 @@ import { toast } from 'sonner';
 interface CartStore {
   items: CartItem[];
   addItem: (item: CartItem) => void;
-  removeItem: (productId: number, variantId: number) => void;
-  updateQuantity: (productId: number, variantId: number, quantity: number) => void;
+  removeItem: (productId: number) => void;
+  updateQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
   getTotal: () => number;
   getItemsCount: () => number;
@@ -22,13 +22,13 @@ export const useCart = create<CartStore>()(
       addItem: (item) => {
         const items = get().items;
         const existingItem = items?.find(
-          (i) => i?.productId === item?.productId && i?.variantId === item?.variantId
+          (i) => i?.productId === item?.productId
         );
 
         if (existingItem) {
           set({
             items: items?.map((i) =>
-              i?.productId === item?.productId && i?.variantId === item?.variantId
+              i?.productId === item?.productId
                 ? { ...i, quantity: (i?.quantity ?? 0) + (item?.quantity ?? 1) }
                 : i
             ) ?? [],
@@ -39,24 +39,24 @@ export const useCart = create<CartStore>()(
           toast.success('Produto adicionado ao carrinho!');
         }
       },
-      removeItem: (productId, variantId) => {
+      removeItem: (productId) => {
         const items = get().items;
         set({
           items: items?.filter(
-            (i) => !(i?.productId === productId && i?.variantId === variantId)
+            (i) => !(i?.productId === productId)
           ) ?? [],
         });
         toast.success('Produto removido do carrinho');
       },
-      updateQuantity: (productId, variantId, quantity) => {
+      updateQuantity: (productId, quantity) => {
         const items = get().items;
         if (quantity <= 0) {
-          get().removeItem(productId, variantId);
+          get().removeItem(productId);
           return;
         }
         set({
           items: items?.map((i) =>
-            i?.productId === productId && i?.variantId === variantId
+            i?.productId === productId
               ? { ...i, quantity }
               : i
           ) ?? [],

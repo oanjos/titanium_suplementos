@@ -32,16 +32,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Gerar número do pedido
+    const cpf = String(customer?.cpf ?? '').replace(/\D/g, '');
     const orderNumber = generateOrderNumber();
 
     // Criar pedido
     const order = await prisma.order.create({
       data: {
         orderNumber,
-        customerName: customer?.name ?? '',
-        customerEmail: customer?.email ?? '',
-        customerPhone: customer?.phone ?? '',
-        customerAddress: customer?.address ?? '',
+        customerCpf: cpf || null,
         subtotal,
         discountAmount: discountAmount ?? 0,
         shippingCost,
@@ -52,7 +50,6 @@ export async function POST(request: NextRequest) {
         items: {
           create: items?.map((item: any) => ({
             productId: item?.productId ?? 0,
-            productVariantId: item?.variantId ?? null,
             quantity: item?.quantity ?? 0,
             unitPrice: item?.unitPrice ?? 0,
             subtotal: (item?.quantity ?? 0) * (item?.unitPrice ?? 0),
@@ -60,6 +57,23 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    if (cpf) {
+      await prisma.customerProfile.upsert({
+        where: { cpf },
+        create: {
+          cpf,
+          name: customer?.name ?? '',
+          email: customer?.email ?? '',
+          phone: customer?.phone ?? '',
+        },
+        update: {
+          name: customer?.name ?? '',
+          email: customer?.email ?? '',
+          phone: customer?.phone ?? '',
+        },
+      });
+    }
 
     // Se usou cupom, incrementar contador
     if (discountCodeId) {

@@ -3,49 +3,38 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Product, ProductVariant } from '@/lib/types';
+import { Product } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { ShoppingCart, Package, Clock, Minus, Plus, ArrowLeft } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
 import { motion } from 'framer-motion';
 
 interface ProductDetailProps {
-  product: Product & { variants?: ProductVariant[] };
+  product: Product;
 }
 
 export default function ProductDetail({ product }: ProductDetailProps) {
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
-    product?.variants?.[0] ?? null
-  );
   const [quantity, setQuantity] = useState(1);
   const addItem = useCart((state) => state?.addItem);
 
   const isInStock = product?.stockType === 'pronta_entrega';
-  const basePrice = Number(product?.price ?? 0);
-  const variantPrice = Number(selectedVariant?.additionalPrice ?? 0);
-  const totalPrice = basePrice + variantPrice;
+  const isOutOfStock = product?.stockType === 'sem_estoque';
+  const totalPrice = Number(product?.price ?? 0);
+  const availableStock = isInStock
+    ? (product?.stockAvailable ?? 0)
+    : (product?.stockDistributor ?? 0);
 
   const handleAddToCart = () => {
-    if (!selectedVariant) return;
-
     addItem?.({
       productId: product?.id ?? 0,
-      variantId: selectedVariant?.id ?? 0,
       quantity,
       productName: product?.name ?? '',
-      variantName: selectedVariant?.name ?? '',
       imageUrl: product?.imageUrl ?? '',
       price: totalPrice,
       brand: product?.brand ?? '',
+      sku: product?.sku ?? null,
     });
   };
 
@@ -85,16 +74,24 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 priority
               />
               <div className="absolute top-4 right-4">
-                <Badge variant={isInStock ? 'success' : 'warning'} className="gap-1 text-sm px-3 py-1">
+                <Badge
+                  variant={isInStock ? 'success' : isOutOfStock ? 'destructive' : 'warning'}
+                  className="gap-1 text-sm px-3 py-1"
+                >
                   {isInStock ? (
                     <>
                       <Package className="h-4 w-4" />
                       Pronta Entrega
                     </>
+                  ) : isOutOfStock ? (
+                    <>
+                      <Package className="h-4 w-4" />
+                      Sem Estoque
+                    </>
                   ) : (
                     <>
                       <Clock className="h-4 w-4" />
-                      Sob Encomenda (2 dias úteis)
+                      Sob Encomenda (2 dias ?teis)
                     </>
                   )}
                 </Badge>
@@ -134,34 +131,6 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             </CardContent>
           </Card>
 
-          {/* Variant Selector */}
-          {(product?.variants?.length ?? 0) > 0 && (
-            <div className="space-y-2">
-              <label className="text-sm font-semibold">Selecione a variante:</label>
-              <Select
-                value={selectedVariant?.id?.toString() ?? ''}
-                onValueChange={(value) => {
-                  const variant = product?.variants?.find((v) => v?.id?.toString() === value);
-                  setSelectedVariant(variant ?? null);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma opção" />
-                </SelectTrigger>
-                <SelectContent>
-                  {product?.variants?.map((variant) => {
-                    const vPrice = basePrice + Number(variant?.additionalPrice ?? 0);
-                    return (
-                      <SelectItem key={variant?.id ?? 0} value={variant?.id?.toString() ?? ''}>
-                        {variant?.name ?? ''} - R$ {vPrice?.toFixed(2)?.replace('.', ',') ?? '0,00'}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
           {/* Quantity Selector */}
           <div className="space-y-2">
             <label className="text-sm font-semibold">Quantidade:</label>
@@ -180,11 +149,9 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              {selectedVariant && (
-                <p className="text-sm text-muted-foreground">
-                  {selectedVariant?.stockQuantity ?? 0} unidades disponíveis
-                </p>
-              )}
+              <p className="text-sm text-muted-foreground">
+                {availableStock} unidades disponíveis
+              </p>
             </div>
           </div>
 
@@ -193,7 +160,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             size="lg"
             className="w-full gap-2 text-black font-semibold"
             onClick={handleAddToCart}
-            disabled={!selectedVariant}
+            disabled={availableStock <= 0}
           >
             <ShoppingCart className="h-5 w-5" />
             Adicionar ao Carrinho

@@ -8,35 +8,62 @@ interface PageProps {
   searchParams: { [key: string]: string | string[] | undefined };
 }
 
-async function getProducts(category?: string) {
+async function getProducts(category?: string, search?: string) {
   try {
-    const where = category
-      ? {
-          category: {
-            equals: category,
-            mode: 'insensitive' as const,
+    const searchValue = search?.trim();
+    const andConditions: any[] = [];
+    if (category) {
+      andConditions.push({
+        category: {
+          equals: category,
+          mode: 'insensitive' as const,
+        },
+      });
+    }
+    if (searchValue) {
+      andConditions.push({
+        OR: [
+          { name: { contains: searchValue, mode: 'insensitive' as const } },
+          {
+            aliasName: {
+              contains: searchValue,
+              mode: 'insensitive' as const,
+            },
           },
-        }
-      : {};
+        ],
+      });
+    }
+    andConditions.push(
+      category
+        ? {
+            OR: [
+              { stockType: 'pronta_entrega', stockAvailable: { gt: 0 } },
+              { stockType: 'sob_encomenda', stockDistributor: { gt: 0 } },
+            ],
+          }
+        : {
+            stockType: 'pronta_entrega',
+            stockAvailable: { gt: 0 },
+          }
+    );
+
+    const where = {
+      costPrice: { not: null },
+      AND: andConditions,
+    };
 
     const products = await prisma.product.findMany({
       where,
-      include: {
-        variants: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: [
+        { stockType: 'asc' },
+        { createdAt: 'desc' },
+      ],
     });
     
     // Convert Decimal to number for client components
     return products?.map((product: any) => ({
       ...product,
       price: Number(product?.price ?? 0),
-      variants: product?.variants?.map((variant: any) => ({
-        ...variant,
-        additionalPrice: Number(variant?.additionalPrice ?? 0),
-      })) ?? [],
     })) ?? [];
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -47,6 +74,13 @@ async function getProducts(category?: string) {
 async function getCategories() {
   try {
     const categories = await prisma.product.findMany({
+      where: {
+        costPrice: { not: null },
+        OR: [
+          { stockType: 'pronta_entrega', stockAvailable: { gt: 0 } },
+          { stockType: 'sob_encomenda', stockDistributor: { gt: 0 } },
+        ],
+      },
       select: {
         category: true,
       },
@@ -59,10 +93,44 @@ async function getCategories() {
   }
 }
 
+async function getProductNames(category?: string) {
+  try {
+    const where = {
+      costPrice: { not: null },
+      NOT: {
+        stockType: 'sem_estoque',
+      },
+      ...(category
+        ? {
+            category: {
+              equals: category,
+              mode: 'insensitive' as const,
+            },
+          }
+        : {}),
+    };
+
+    const names = await prisma.product.findMany({
+      where,
+      select: { name: true },
+      distinct: ['name'],
+      orderBy: { name: 'asc' },
+    });
+
+    return names?.map((item) => item?.name ?? '').filter(Boolean) ?? [];
+  } catch (error) {
+    console.error('Error fetching product names:', error);
+    return [];
+  }
+}
+
 export default async function ProdutosPage({ searchParams }: PageProps) {
   const categoria = searchParams?.categoria as string | undefined;
-  const products = await getProducts(categoria);
+  const busca =
+    typeof searchParams?.busca === 'string' ? searchParams?.busca : undefined;
+  const products = await getProducts(categoria, busca);
   const categories = await getCategories();
+  const productNames = await getProductNames(categoria);
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8">
@@ -70,7 +138,7 @@ export default async function ProdutosPage({ searchParams }: PageProps) {
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-bold">
-            {categoria ? categoria : 'Todos os Produtos'}
+            {categoria ? categoria : 'Produtos em Pronta Entrega'}
           </h1>
           <p className="text-muted-foreground">
             {products?.length ?? 0} produto{(products?.length ?? 0) !== 1 ? 's' : ''} encontrado{(products?.length ?? 0) !== 1 ? 's' : ''}
@@ -78,7 +146,11 @@ export default async function ProdutosPage({ searchParams }: PageProps) {
         </div>
 
         {/* Filter */}
-        <ProductsFilter categories={categories} selectedCategory={categoria} />
+        <ProductsFilter
+          categories={categories}
+          selectedCategory={categoria}
+          productNames={productNames}
+        />
 
         {/* Products Grid */}
         {(products?.length ?? 0) > 0 ? (
