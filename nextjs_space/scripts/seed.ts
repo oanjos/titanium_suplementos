@@ -246,6 +246,7 @@ async function main() {
       const createdProduct = await prisma.product.create({
         data: {
           ...productData,
+          stockType: productData.stockType as any,
           sku,
           stockAvailable,
         },
