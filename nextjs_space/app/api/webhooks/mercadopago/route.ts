@@ -46,6 +46,16 @@ function mapPaymentStatus(status: string) {
   return 'pending';
 }
 
+function mapPaymentMethod(payment: any) {
+  const paymentType = String(payment?.payment_type_id ?? '').toLowerCase();
+  const methodId = String(payment?.payment_method_id ?? '').toLowerCase();
+  if (paymentType === 'credit_card') return 'credit_card';
+  if (paymentType === 'debit_card') return 'debit_card';
+  if (paymentType === 'pix' || methodId === 'pix') return 'pix';
+  if (paymentType === 'bank_transfer') return 'pix';
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const accessToken = process.env.MP_ACCESS_TOKEN;
@@ -92,6 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     const newStatus = mapPaymentStatus(payment?.status);
+    const paymentMethod = mapPaymentMethod(payment);
 
     await prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
@@ -143,7 +154,10 @@ export async function POST(request: NextRequest) {
 
       await tx.order.update({
         where: { orderNumber },
-        data: { status: newStatus },
+        data: {
+          status: newStatus,
+          ...(paymentMethod ? { paymentMethod } : {}),
+        },
       });
     });
 

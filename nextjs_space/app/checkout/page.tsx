@@ -173,7 +173,6 @@ export default function CheckoutPage() {
       const data = await response.json();
 
       if (response.ok && data?.success) {
-        clearCart?.();
         if (data?.initPoint) {
           window.location.href = data.initPoint;
           return;

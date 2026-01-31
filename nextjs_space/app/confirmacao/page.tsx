@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, Package, Home } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useCart } from '@/hooks/use-cart';
 
 function ConfirmacaoContent() {
   const searchParams = useSearchParams();
@@ -14,6 +15,7 @@ function ConfirmacaoContent() {
   const orderNumber = searchParams?.get('pedido') ?? '';
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const clearCart = useCart((state) => state?.clearCart);
 
   useEffect(() => {
     if (!orderNumber) {
@@ -27,6 +29,9 @@ function ConfirmacaoContent() {
       .then((data) => {
         if (data?.success) {
           setOrder(data?.order ?? null);
+          if (data?.order?.status === 'paid') {
+            clearCart?.();
+          }
         }
       })
       .catch((error) => {
