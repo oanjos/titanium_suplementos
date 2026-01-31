@@ -108,7 +108,7 @@ model DiscountCode {
   id            Int      @id @default(autoincrement())
   code          String   @unique
   partnerName   String?  @map("partner_name")
-  discountType  String   @map("discount_type") // 'percentage' ou 'fixed'
+  discountType  DiscountType @map("discount_type") // 'percentage' ou 'fixed'
   discountValue Decimal  @map("discount_value") @db.Decimal(10, 2)
   minPurchase   Decimal  @map("min_purchase") @db.Decimal(10, 2)
   maxUses       Int?     @map("max_uses")
@@ -132,7 +132,7 @@ model Order {
   discountAmount  Decimal  @default(0) @map("discount_amount") @db.Decimal(10, 2)
   shippingCost    Decimal  @map("shipping_cost") @db.Decimal(10, 2)
   totalAmount     Decimal  @map("total_amount") @db.Decimal(10, 2)
-  paymentMethod   String   @map("payment_method")
+  paymentMethod   PaymentMethod   @map("payment_method")
   status          String   @default("pending")
   discountCodeId  Int?     @map("discount_code_id")
   createdAt       DateTime @default(now()) @map("created_at")
@@ -142,6 +142,21 @@ model Order {
   items        OrderItem[]
 
   @@map("orders")
+}
+
+enum DiscountType {
+  percentage
+  fixed
+
+  @@map("discount_type_enum")
+}
+
+enum PaymentMethod {
+  pix
+  credit_card
+  debit_card
+
+  @@map("payment_method_enum")
 }
 
 model CustomerProfile {
