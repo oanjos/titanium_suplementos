@@ -112,7 +112,6 @@ export async function POST(request: NextRequest) {
           excluded_payment_types: [
             { id: 'ticket' },
             { id: 'atm' },
-            { id: 'bank_transfer' },
           ],
         },
       },
