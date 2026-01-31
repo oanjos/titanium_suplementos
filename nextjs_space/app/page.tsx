@@ -37,14 +37,14 @@ async function getFeaturedProducts() {
 }
 
 const categories = [
-  { name: 'WHEY PROTEIN', slug: 'whey-protein', icon: Package },
-  { name: 'CREATINA', slug: 'creatina', icon: Zap },
-  { name: 'VITAMINAS', slug: 'vitaminas', icon: Package },
-  { name: 'PROTEINAS', slug: 'proteinas', icon: Package },
-  { name: 'MINERAIS', slug: 'minerais', icon: Package },
-  { name: 'OMEGA 3', slug: 'omega-3', icon: Package },
-  { name: 'COLAGENO', slug: 'colageno', icon: Package },
-  { name: 'DOCE FIT', slug: 'doce-fit', icon: Package },
+  { name: 'WHEY PROTEIN', value: 'WHEY PROTEIN', icon: Package },
+  { name: 'CREATINA', value: 'CREATINA', icon: Zap },
+  { name: 'VITAMINAS', value: 'VITAMINAS', icon: Package },
+  { name: 'PROTEINAS', value: 'PROTEINAS', icon: Package },
+  { name: 'MINERAIS', value: 'MINERAIS', icon: Package },
+  { name: 'OMEGA 3', value: 'OMEGA 3', icon: Package },
+  { name: 'COLAGENO', value: 'COLAGENO', icon: Package },
+  { name: 'DOCE FIT', value: 'DOCE FIT', icon: Package },
 ];
 
 export default async function Home() {
@@ -84,8 +84,8 @@ export default async function Home() {
               const Icon = category?.icon;
               return (
                 <Link
-                  key={category?.slug ?? ''}
-                  href={`/produtos?categoria=${category?.slug ?? ''}`}
+                  key={category?.value ?? ''}
+                  href={`/produtos?categoria=${encodeURIComponent(category?.value ?? '')}`}
                   className="group"
                 >
                   <Card className="p-6 text-center hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:-translate-y-1">
