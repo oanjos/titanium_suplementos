@@ -10,12 +10,14 @@ import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Package, Clock, Minus, Plus, ArrowLeft } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 interface ProductDetailProps {
   product: Product;
 }
 
 export default function ProductDetail({ product }: ProductDetailProps) {
+  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const addItem = useCart((state) => state?.addItem);
 
@@ -164,6 +166,21 @@ export default function ProductDetail({ product }: ProductDetailProps) {
           >
             <ShoppingCart className="h-5 w-5" />
             Adicionar ao Carrinho
+          </Button>
+
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full"
+            onClick={() => {
+              if (typeof window !== 'undefined' && window.history.length > 1) {
+                router.back();
+              } else {
+                router.push('/produtos');
+              }
+            }}
+          >
+            Continuar comprando
           </Button>
         </motion.div>
       </div>
