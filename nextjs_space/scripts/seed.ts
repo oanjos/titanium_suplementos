@@ -262,7 +262,7 @@ async function main() {
   const discountCodes = [
     {
       code: 'PRIMEIRA10',
-      discountType: 'percentage',
+      discountType: 'percentage' as const,
       discountValue: 10,
       minPurchase: 100,
       maxUses: 100,
@@ -272,7 +272,7 @@ async function main() {
     },
     {
       code: 'PERSONAL15',
-      discountType: 'percentage',
+      discountType: 'percentage' as const,
       discountValue: 15,
       minPurchase: 200,
       maxUses: 50,
@@ -282,7 +282,7 @@ async function main() {
     },
     {
       code: 'PROMO20',
-      discountType: 'fixed',
+      discountType: 'fixed' as const,
       discountValue: 20,
       minPurchase: 150,
       maxUses: 200,
@@ -292,7 +292,7 @@ async function main() {
     },
     {
       code: 'FITNESS50',
-      discountType: 'fixed',
+      discountType: 'fixed' as const,
       discountValue: 50,
       minPurchase: 300,
       maxUses: 30,
