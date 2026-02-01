@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import prisma from '@/lib/db';
-import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { MercadoPagoConfig, Payment, MerchantOrder } from 'mercadopago';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +58,14 @@ function mapPaymentMethod(payment: any) {
 }
 
 export async function POST(request: NextRequest) {
+  return handleWebhook(request);
+}
+
+export async function GET(request: NextRequest) {
+  return handleWebhook(request);
+}
+
+async function handleWebhook(request: NextRequest) {
   try {
     const accessToken = process.env.MP_ACCESS_TOKEN;
     if (!accessToken) {
@@ -65,7 +73,15 @@ export async function POST(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const body = await request.json().catch(() => ({}));
+    const body = request.method === 'POST'
+      ? await request.json().catch(() => ({}))
+      : {};
+    const topic =
+      searchParams.get('topic') ||
+      searchParams.get('type') ||
+      body?.type ||
+      body?.action ||
+      '';
     const dataId =
       searchParams.get('data.id') ||
       searchParams.get('id') ||
@@ -84,7 +100,22 @@ export async function POST(request: NextRequest) {
 
     const client = new MercadoPagoConfig({ accessToken });
     const paymentClient = new Payment(client);
-    const payment = await paymentClient.get({ id: String(dataId) });
+    let payment: any = null;
+
+    if (String(topic).toLowerCase() === 'merchant_order') {
+      const merchantOrderClient = new MerchantOrder(client);
+      const merchantOrder = await merchantOrderClient.get({ merchantOrderId: String(dataId) });
+      const paymentId =
+        merchantOrder?.payments?.find((p: any) => p?.status === 'approved')?.id ||
+        merchantOrder?.payments?.[0]?.id ||
+        null;
+      if (!paymentId) {
+        return NextResponse.json({ ok: true });
+      }
+      payment = await paymentClient.get({ id: String(paymentId) });
+    } else {
+      payment = await paymentClient.get({ id: String(dataId) });
+    }
 
     const orderNumber = payment?.external_reference;
     if (!orderNumber) {

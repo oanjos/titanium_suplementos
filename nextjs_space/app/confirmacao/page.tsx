@@ -124,7 +124,9 @@ function ConfirmacaoContent() {
 
             <div className="pt-4 border-t">
               <p className="text-sm text-muted-foreground mb-2">Retirada na Loja</p>
-              <p className="text-sm">Retirada na loja</p>
+              <p className="text-sm">
+                BODY & SOUL - Rua Antônio de Oliveira, 164 - Centro - Mairiporã/SP
+              </p>
             </div>
           </CardContent>
         </Card>

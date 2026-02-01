@@ -184,7 +184,7 @@ export default function CheckoutPage() {
           name: formData?.customerName ?? '',
           email: formData?.customerEmail ?? '',
           phone: formData?.customerPhone ?? '',
-          address: 'Retirada na loja',
+          address: 'BODY & SOUL - Rua Antônio de Oliveira, 164 - Centro - Mairiporã/SP',
         },
         items: items?.map((item) => ({
           productId: item?.productId ?? 0,
